@@ -59,23 +59,17 @@ jobs:
 
       - name: Configure JFrog CLI server
         env:
-          JFROG_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
+          JFROG_ACCESS_TOKEN : ${{ secrets.JFROG_ACCESS_TOKEN  }}
         run: |
-          set -euo pipefail
-
           JFROG_URL="${{ inputs['jfrog-url'] }}"
-
-          
-
-          jf config add artifactory-server \
-            --url="$JF_URL" \
-            --access-token="${JFROG_ACCESS_TOKEN}" \
-            --interactive=false
-
-          jf rt ping
-          echo "✅ JFrog CLI configured successfully for server: artifactory-server"
-
-
+          # If JFROG_URL already contains "/artifactory", use as-is; otherwise append "/artifactory"
+          if [[ "$JFROG_URL" == *"/artifactory"* ]]; then
+            ARTIFACTORY_BASE_URL="$JFROG_URL"
+          else
+            ARTIFACTORY_BASE_URL="${JFROG_URL}/artifactory"
+          fi
+          jf config add artifactory-server --url="$JFROG_URL" --access-token="$JFROG_ACCESS_TOKEN " --interactive=false
+          echo "JFrog CLI configured for server id: artifactory-server (URL: $JFROG_URL)"
 
       - name: Configure npm auth for JFrog (jfrog rt npm-config)
         run: |
@@ -101,48 +95,34 @@ jobs:
 
       - name: Install deps and publish package to Artifactory
         env:
-          JFROG_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
+          JFROG_ACCESS_TOKEN : ${{ secrets.JFROG_ACCESS_TOKEN  }}
         run: |
           set -euo pipefail
-
-          # Compose registry URL
+          # Compose registry URL (used in --registry for npm publish)
+          # Use the same logic as before re: artifactory path
           JFROG_URL="${{ inputs['jfrog-url'] }}"
           if [[ "$JFROG_URL" == *"/artifactory"* ]]; then
             BASE_URL="$JFROG_URL"
           else
             BASE_URL="${JFROG_URL}/artifactory"
           fi
-
           REGISTRY_URL="$BASE_URL/api/npm/${{ inputs['jfrog-npm-repository'] }}"
           echo "Publishing to npm registry: $REGISTRY_URL"
-
-          # Move to the package directory
+          # Move to package dir
           cd "${{ steps.pkg.outputs.package_dir }}"
           echo "Current working directory: $(pwd)"
-          ls -la
-
-          # Install dependencies using JFrog CLI wrapper
+          # If artifact extraction produced built files in dist/, they are available here because we extracted to repo root
           if [ -f package-lock.json ]; then
             jf npm ci
           else
             jf npm install
           fi
+          # Publish using the registry configured above (jfrog rt npm-config wrote ~/.npmrc with credentials).
+          jf npm publish --server-id=artifactory-server
 
-          # Optional: Create npm package tarball for verification
-          npm pack
-
-          # Configure build context for jfrog CLI
+      - name: (Optional) Record build-info with JFrog CLI
+        if: ${{ inputs['build-name'] != '' && inputs['build-number'] != '' }}
+        run: |
           jf rt bce "${{ inputs['build-name'] }}" "${{ inputs['build-number'] }}"
-
-          # Publish using Artifactory repository and build context
-          jf npm publish \
-            --registry "$REGISTRY_URL" \
-            --build-name "${{ inputs['build-name'] }}" \
-            --build-number "${{ inputs['build-number'] }}" \
-            --server-id-deploy=artifactory-server
-
-          # Collect environment and publish build info
-          jf rt build-collect-env "${{ inputs['build-name'] }}" "${{ inputs['build-number'] }}"
-          jf rt bp "${{ inputs['build-name'] }}" "${{ inputs['build-number'] }}" --server-id=artifactory-server --access-token=$JFROG_ACCESS_TOKEN
-
-          echo "✅ npm package successfully published to JFrog Artifactory!"
+          jf rt bp "${{ inputs['build-name'] }}" "${{ inputs['build-number'] }}" --server-id=artifactory-server 
+          echo "Build info published for ${{ inputs['build-name'] }} #${{ inputs['build-number'] }}"
