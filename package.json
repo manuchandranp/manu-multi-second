@@ -1,11 +1,31 @@
 {
   "name": "npm-publish-action",
   "version": "1.0.0",
-  "main": "lib/index.js",
+  "description": "A reusable GitHub Action workflow for publishing npm packages to JFrog Artifactory.",
+  "main": "index.js",
   "scripts": {
-    "build": "echo 'No build necessary'"
+    "test": "echo \"Running tests...\" && exit 0",
+    "build": "echo \"Building project...\" && mkdir -p dist && echo 'build output' > dist/artifact.txt"
   },
-  "dependencies": {
-    "@actions/core": "^1.2.6"
+  "keywords": [
+    "github-actions",
+    "jfrog",
+    "npm",
+    "ci-cd",
+    "publish"
+  ],
+  "author": "Your Name <you@example.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/npm-publish-action.git"
+  },
+  "files": [
+    "dist/",
+    "index.js",
+    "README.md"
+  ],
+  "publishConfig": {
+    "registry": "https://hts2.jfrog.io/artifactory/api/npm/manu-npm-virtual/"
   }
 }
