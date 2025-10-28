@@ -148,6 +148,6 @@ jobs:
 
           # Collect environment and publish build info
           jf rt build-collect-env "${{ inputs['build-name'] }}" "${{ inputs['build-number'] }}"
-          jf rt bp "${{ inputs['build-name'] }}" "${{ inputs['build-number'] }}" --server-id=artifactory-server
+          jf rt bp "${{ inputs['build-name'] }}" "${{ inputs['build-number'] }}" --server-id=artifactory-server --access-token=$JFROG_ACCESS_TOKEN
 
           echo "✅ npm package successfully published to JFrog Artifactory!"
