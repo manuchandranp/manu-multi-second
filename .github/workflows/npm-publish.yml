@@ -65,17 +65,10 @@ jobs:
 
           JFROG_URL="${{ inputs['jfrog-url'] }}"
 
-          # Ensure Artifactory base path is included
-          if [[ "$JFROG_URL" == *"/artifactory"* ]]; then
-            ARTIFACTORY_BASE_URL="$JFROG_URL"
-          else
-            ARTIFACTORY_BASE_URL="${JFROG_URL%/}/artifactory"
-          fi
-
-          echo "Configuring JFrog CLI for URL: $ARTIFACTORY_BASE_URL"
+          
 
           jf config add artifactory-server \
-            --url="$ARTIFACTORY_BASE_URL" \
+            --url="$JFROG_URL" \
             --access-token="${JFROG_ACCESS_TOKEN}" \
             --interactive=false
 
