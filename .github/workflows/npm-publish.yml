@@ -96,31 +96,43 @@ jobs:
 
       - name: Install deps and publish package to Artifactory
         env:
-           JFROG_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
+        JFROG_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
         run: |
          set -euo pipefail
-         # Compose registry URL (used in --registry for npm publish)
+
          JFROG_URL="${{ inputs['jfrog-url'] }}"
-         if [[ "$JFROG_URL" == _"/artifactory"_ ]]; then
+         if [[ "$JFROG_URL" == *"/artifactory"* ]]; then
          BASE_URL="$JFROG_URL"
          else
          BASE_URL="${JFROG_URL}/artifactory"
          fi
          REGISTRY_URL="$BASE_URL/api/npm/${{ inputs['jfrog-npm-repository'] }}"
          echo "Publishing to npm registry: $REGISTRY_URL"
-          # Move to package dir
+
          cd "${{ steps.pkg.outputs.package_dir }}"
          echo "Current working directory: $(pwd)"
-
-         # Install dependencies
+         echo "package.json preview:"
+         head -n 10 package.json
+         # install deps using jf npm
           if [ -f package-lock.json ]; then
           jf npm ci
-         else
-         jf npm install
-         fi
-    
-         # Publish using the registry configured above (show more debugging info)
-         jf npm publish --registry "$REGISTRY_URL" --verbose
+           else
+           jf npm install
+          fi
+
+          # pack the npm tarball manually to confirm it's created
+          echo "Packing npm package..."
+          npm pack
+
+          echo "Generated files:"
+          ls -lh *.tgz || echo "No .tgz file found!"
+
+            # safer publish: upload the .tgz directly
+           PACKAGE_TGZ=$(ls *.tgz | head -n 1)
+          jf rt upload "$PACKAGE_TGZ" "npm/${{ inputs['jfrog-npm-repository'] }}/" \
+         --flat=false --server-id=artifactory-server
+
+           echo "Package uploaded: $PACKAGE_TGZ"
 
       - name: (Optional) Record build-info with JFrog CLI
         if: ${{ inputs['build-name'] != '' && inputs['build-number'] != '' }}
