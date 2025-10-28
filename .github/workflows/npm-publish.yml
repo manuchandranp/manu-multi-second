@@ -130,7 +130,7 @@ jobs:
             # safer publish: upload the .tgz directly
            PACKAGE_TGZ=$(ls *.tgz | head -n 1)
           jf rt upload "$PACKAGE_TGZ" "${{ inputs['jfrog-npm-repository'] }}" \
-         --flat=false --server-id=artifactory-server
+         --flat=false --server-id=artifactory-server --build-name=${{ inputs['build-name'] }} --build-number=${{ inputs['build-number'] }}
 
            echo "Package uploaded: $PACKAGE_TGZ"
 
