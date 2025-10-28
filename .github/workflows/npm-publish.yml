@@ -43,7 +43,7 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: ${{ inputs.artifact-name }}
-          path: ${{ dirname(inputs['package-json-file-path']) }}/dist
+          path: .
 
 
       - name: Setup Node.js
