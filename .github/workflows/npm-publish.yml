@@ -96,7 +96,7 @@ jobs:
 
       - name: Install deps and publish package to Artifactory
         env:
-        JFROG_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
+         JFROG_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
         run: |
          set -euo pipefail
 
