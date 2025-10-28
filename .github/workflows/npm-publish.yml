@@ -68,7 +68,7 @@ jobs:
           
 
           jf config add artifactory-server \
-            --url="$JFROG_URL" \
+            --url="$JF_URL" \
             --access-token="${JFROG_ACCESS_TOKEN}" \
             --interactive=false
 
