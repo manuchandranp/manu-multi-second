@@ -62,24 +62,26 @@ jobs:
           JFROG_ACCESS_TOKEN: ${{ secrets.JFROG_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
+
           JFROG_URL="${{ inputs['jfrog-url'] }}"
 
-          # Ensure consistent base URL
+          # Ensure Artifactory base path is included
           if [[ "$JFROG_URL" == *"/artifactory"* ]]; then
             ARTIFACTORY_BASE_URL="$JFROG_URL"
           else
-            ARTIFACTORY_BASE_URL="${JFROG_URL}/artifactory"
+            ARTIFACTORY_BASE_URL="${JFROG_URL%/}/artifactory"
           fi
 
           echo "Configuring JFrog CLI for URL: $ARTIFACTORY_BASE_URL"
 
-          # Correct: no trailing space after token
           jf config add artifactory-server \
             --url="$ARTIFACTORY_BASE_URL" \
             --access-token="${JFROG_ACCESS_TOKEN}" \
             --interactive=false
 
-          echo "✅ JFrog CLI configured successfully."
+          jf rt ping
+          echo "✅ JFrog CLI configured successfully for server: artifactory-server"
+
 
 
       - name: Configure npm auth for JFrog (jfrog rt npm-config)
